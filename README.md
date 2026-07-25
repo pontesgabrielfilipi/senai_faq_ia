@@ -1,5 +1,5 @@
 # venv
-O venv é a ferramenta nativa do Python para criar ambientes virtuais isolados. Ele garante que as bibliotecas e dependências de um projeto não entrem em conflito com as de outros projetos ou com o sistema operacional.
+O venv é a ferramenta nativa do Python para criar ambientes virtuais isolados. Ele garante que as bibliotecas e dependências de um projeto não entrem em conflito com as de outros projetos ou com o sistema operacional. 
 
 ```python
 python -m venv .venv
