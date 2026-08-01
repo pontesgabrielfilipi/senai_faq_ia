@@ -8,7 +8,7 @@ python -m venv .venv
 ## Ativar o venv
 
 ### Power Shell
-```
+``` 
 .venv\Scripts\Activate.ps1
 ```
 
