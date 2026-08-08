@@ -22,24 +22,28 @@ def calcular_tokens(texto, modelo="gpt-4o-mini"):
     
     return len(lista_de_tokens)
 
-## Função para let PDF/DOCX
+## Função para ler PDF/DOCX
 def extrair_texto_de_arquivo(uploaded_file):
-    if uploaded_file is nome:
+    if uploaded_file is None:
         return ""
-    if uploaded_file.name.endswith('txt'):
+    
+    if uploaded_file.name.endswith('.txt'):
         return uploaded_file.getvalue().decode("utf-8")
-    #Fazer o if com .docx
+    
+    # Fazer o if com .docx
     elif uploaded_file.name.endswith('.docx'):
         doc = docx.Document(uploaded_file)
-        return "\n".join([p.txt for p in doc.paragraphs if p.text])
+        return "\n".join([p.text for p in doc.paragraphs if p.text])
+    
     elif uploaded_file.name.endswith('.pdf'):
         leitor_pdf = pypdf.PdfReader(uploaded_file)
         textoextraido = ""
         for pagina in leitor_pdf.pages:
             t = pagina.extract_text()
             if t:
-                textoextraido +=t + "\n"
+                textoextraido += t + "\n"
         return textoextraido
+    
     return ""
 
 def gerar_template_word_bytes():
@@ -50,26 +54,41 @@ def gerar_template_word_bytes():
     buffer.seek(0)
     return buffer
 
-def gerar_resposta_ia(provedor, mensagem, groq_key=None, temperatura=0.2):
-    if provedor == "GPT-4o Mini (Via G4F)":
-        client = Client()
-        resposta = client.chat.completions.create(
-            model = MODELO_DEFAULT_G4F,
-            messages=mensagem,
-            temperature=temperatura
-        )
-        texto = resposta.choices[0].message.content
-    elif provedor == "Llama 3.3 (Via Groq)":
-        if not groq_key:
-            raise ValueError("GROQ_API_KEY não configurada no secrets.toml")
-        client_groq = Groq(api_key=groq_key)
-        resposta = client_groq.chat.completions.create(
-            model=MODELO_DEFAULT_GROQ,
-            messages=mensagem,
-            temperature=temperatura
-        )
-        texto = resposta.choices[0].message.content
-    else:
-        raise ValueError("Provedor Inválido.")
+def gerar_resposta_ia(provedor, mensagem, api_keys=None, temperatura=0.2):
+    inicio = time.time()
+    texto = None
+
+    try:
+        if provedor == "GPT-4o Mini (Via G4F)":
+            client = Client(api_key=api_keys) if api_keys else Client()
+            resposta = client.chat.completions.create(
+                model=MODELO_DEFAULT_G4F,
+                messages=mensagem,
+                temperature=temperatura
+            )
+            texto = resposta.choices[0].message.content
+
+        elif provedor == "Llama 3.3 (Via Groq)":
+            if not api_keys:
+                raise ValueError("GROQ_API_KEY não configurada no secrets.toml")
+
+            client_groq = Groq(api_key=api_keys)
+            resposta = client_groq.chat.completions.create(
+                model=MODELO_DEFAULT_GROQ,
+                messages=mensagem,
+                temperature=temperatura
+            )
+            texto = resposta.choices[0].message.content
+
+        else:
+            raise ValueError(f"Provedor inválido: '{provedor}'")
+
+        # Garante que a IA realmente retornou algo
+        if not texto:
+            raise ValueError("A IA não retornou nenhum conteúdo.")
+
+    except Exception as e:
+        raise Exception(f"Erro ao conectar com a IA: {str(e)}")
+
     tempo = round(time.time() - inicio, 2)
     return texto, tempo

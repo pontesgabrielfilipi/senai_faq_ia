@@ -1,8 +1,17 @@
 import streamlit as st
 from config import PROMPT_SISTEMA_SENAI
 from services import calcular_tokens,gerar_resposta_ia
+import logging
+
+logger = logging.getLogger(__name__)
 
 GROQ_KEY = st.secrets.get("GROQ_API_KEY", None)
+G4F_KEY = st.secrets.get("G4F_API_KEY", None)
+
+API_KEYS = {
+    "Llama 3.3 (Via Groq)": st.secrets.get("GROQ_API_KEY", None),
+    "GPT-4o Mini (Via G4F)": st.secrets.get("G4F_API_KEY", None),
+}
 
 st.title("Consultor Virtual de Cursos Senai")
 
@@ -51,12 +60,16 @@ if prompt := st.chat_input("Faça sua pergunta para a IA..."):
     with st.chat_message("assistant"):
         with st.spinner("Pensando...."):
             try:
-                respota, tempo = gerar_resposta_ia(provedor, st.session_state.mensagens, GROQ_KEY, temperatura)
+                api_key = API_KEYS.get(provedor)
+                resposta, tempo = gerar_resposta_ia(provedor, st.session_state.mensagens, api_key, temperatura)
                 st.markdown(resposta)
                 st.caption(f"Resposta em {tempo}s")
                 st.session_state.mensagens.append({
-                    "role" : "assistant", "content" : respota
+                    "role" : "assistant", "content" : resposta
                 })
-                st.rerun()
+                # st.rerun()
             except Exception as e:
-                st.error(f"Erro ao conectar com a IA: {e}")
+                st.error(f"Erro ao conectar com a ia, tente novamente mais tarde.")
+                
+                logging.basicConfig(level=logging.INFO)
+                logger.error(e)
